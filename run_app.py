@@ -10,6 +10,10 @@
 # y los ejecuta de forma escalonada. A partir de ahí, los cron jobs
 # se encargan de mantener los datos al día automáticamente.
 
+# Comprobación de entorno ANTES de importar dependencias de terceros.
+from utils.venv_check import ensure_venv
+ensure_venv()
+
 import sys
 from db.engine import init_db
 from config.settings import DASH_HOST, DASH_PORT

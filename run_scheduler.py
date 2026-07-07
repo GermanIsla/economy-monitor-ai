@@ -2,6 +2,10 @@
 # run_scheduler.py
 # Punto de entrada: arranca las descargas automáticas en background
 
+# Comprobación de entorno ANTES de importar dependencias de terceros.
+from utils.venv_check import ensure_venv
+ensure_venv()
+
 import time
 from db.engine import init_db
 from scheduler.runner import create_scheduler

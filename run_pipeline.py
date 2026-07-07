@@ -2,6 +2,10 @@
 # run_pipeline.py
 # Punto de entrada: ejecuta un pipeline manualmente desde la terminal
 
+# Comprobación de entorno ANTES de importar dependencias de terceros.
+from utils.venv_check import ensure_venv
+ensure_venv()
+
 import sys
 from db.engine import init_db
 

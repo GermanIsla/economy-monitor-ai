@@ -2,6 +2,10 @@
 # run_dashboard.py
 # Punto de entrada: arranca el dashboard web en localhost
 
+# Comprobación de entorno ANTES de importar dependencias de terceros.
+from utils.venv_check import ensure_venv
+ensure_venv()
+
 from db.engine import init_db
 from config.settings import DASH_HOST, DASH_PORT, DASH_DEBUG
 
