@@ -4,6 +4,7 @@
 
 import requests
 import math
+import time
 from datetime import date
 from sqlalchemy.dialects.sqlite import insert as sqlite_upsert
 from pipelines.base import BasePipeline
@@ -31,6 +32,43 @@ class TreasuryPipeline(BasePipeline):
     def name(self) -> str:
         return "treasury_auctions"
 
+    # Códigos HTTP que merece la pena reintentar (sobrecarga / errores temporales
+    # del servidor). Los 4xx restantes son permanentes y no se reintentan.
+    _TRANSIENT_STATUS = {429, 500, 502, 503, 504}
+
+    def _get(self, params: dict, max_retries: int = 4) -> dict:
+        """
+        GET a la API con reintentos y backoff exponencial.
+
+        Reintenta ante cortes de conexión (RemoteDisconnected), timeouts y
+        errores transitorios del servidor. Espera 1s, 2s, 4s... entre intentos.
+        Si se agotan los reintentos, propaga la última excepción.
+        """
+        for attempt in range(1, max_retries + 1):
+            self.limiter.wait()
+            try:
+                resp = requests.get(self.base_url, params=params, timeout=30)
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout,
+                    requests.exceptions.ChunkedEncodingError) as exc:
+                if attempt == max_retries:
+                    raise
+                reason = str(exc)
+            else:
+                if resp.status_code not in self._TRANSIENT_STATUS:
+                    resp.raise_for_status()  # 4xx permanente -> lanza sin reintentar
+                    return resp.json()
+                if attempt == max_retries:
+                    resp.raise_for_status()  # agotados los reintentos -> lanza
+                reason = f"HTTP {resp.status_code}"
+
+            backoff = 2 ** (attempt - 1)  # 1, 2, 4, 8 s
+            self.logger.warning(
+                f"Fallo transitorio (intento {attempt}/{max_retries}): {reason}. "
+                f"Reintentando en {backoff}s..."
+            )
+            time.sleep(backoff)
+
     def extract(self, since_date: date = None) -> list[dict]:
         """
         Descarga subastas desde FiscalData con paginación.
@@ -52,10 +90,7 @@ class TreasuryPipeline(BasePipeline):
             self.logger.info(f"Filtro API: issue_date >= {since_date}")
 
         # Primera llamada
-        self.limiter.wait()
-        resp = requests.get(self.base_url, params=params, timeout=30)
-        resp.raise_for_status()
-        result = resp.json()
+        result = self._get(params)
 
         total_count = result['meta']['total-count']
 
@@ -69,11 +104,8 @@ class TreasuryPipeline(BasePipeline):
 
         # Páginas restantes
         for page in range(2, total_pages + 1):
-            self.limiter.wait()
             params['page[number]'] = page
-            resp = requests.get(self.base_url, params=params, timeout=30)
-            resp.raise_for_status()
-            all_data.extend(resp.json()['data'])
+            all_data.extend(self._get(params)['data'])
 
             if page % 50 == 0:
                 self.logger.info(f"Progreso: página {page}/{total_pages}")
