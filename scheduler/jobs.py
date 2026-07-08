@@ -15,6 +15,7 @@ from pipelines.liquidity_pipeline import LiquidityPipeline
 from pipelines.signals_pipeline import SignalsPipeline
 from pipelines.funding_pipeline import FundingPipeline
 from pipelines.ofr_repo_pipeline import OFRRepoPipeline
+from pipelines.ofr_rates_pipeline import OFRRatesPipeline
 from utils.logger import get_logger
 
 logger = get_logger("scheduler")
@@ -34,6 +35,7 @@ ALL_PIPELINES = [
     SignalsPipeline,
     FundingPipeline,
     OFRRepoPipeline,
+    OFRRatesPipeline,
 ]
 
 
@@ -225,6 +227,16 @@ def register_jobs(scheduler):
         args=[OFRRepoPipeline],
         hour=22, minute=30,
         id='ofr_repo_daily',
+        replace_existing=True
+    )
+
+    # OFR — tasas de referencia NY Fed (FNYR: SOFR/BGCR/TGCR + percentiles): diaria 22:40.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[OFRRatesPipeline],
+        hour=22, minute=40,
+        id='ofr_rates_daily',
         replace_existing=True
     )
 

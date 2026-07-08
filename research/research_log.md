@@ -5,6 +5,33 @@ resultado · conclusión/siguiente paso**. Se registran también los resultados 
 
 ---
 
+## 2026-07-08 — Tasas repo con percentiles y volumen: OFR/FNYR (estrés de financiación)
+
+**Contexto.** Segunda incorporación del día desde la API OFR: dataset **FNYR** (tasas de
+referencia NY Fed). Pipeline `ofr_rates`, tabla `ofr_reference_rates`, página `/ofr-rates`.
+Cierra el backlog *"volumen de SOFR y percentil 99"*.
+
+**Qué añade.** SOFR, BGCR, TGCR (repo garantizado) con **percentiles 1/25/75/99 y volumen**,
+diario 2018–hoy (41.364 filas). Lo valioso son los **percentiles**: la tasa publicada es la
+mediana; el **P99** recoge las operaciones más caras del día → cuando se dispara sobre el nivel,
+hay escasez de garantía. La derivada **P99 − nivel** (pb) aísla el estrés.
+
+**Validación de datos.** El máximo histórico de SOFR P99 es **17-sep-2019 = 9,00%** (la crisis
+repo que forzó la reintervención de la Fed), seguido de cierres de trimestre y marzo-2020. Los
+datos capturan correctamente los episodios conocidos.
+
+**NCCBR descartado como fuente.** El repo bilateral **sin compensar** (NCCBR) NO es descargable
+por la API pública de la OFR (nivel-transacción, confidencial). El sustituto más cercano es el
+libro *reverse repo* de los **primary dealers** (dataset `NYPD`, 194 series, misma API) →
+anotado como siguiente candidato en el backlog.
+
+**Reutilización.** Se extrajo `add_sp500_reference(fig, periodo_dias)` a
+`dashboard/components/charts.py`: superpone el S&P 500 en eje secundario (toggle por leyenda) en
+cualquier gráfico. Aplicado ya a `/ofr-repo` y `/ofr-rates`.
+
+**Sin análisis todavía** — montaje y visualización. Siguiente: cablear al motor `analysis` la
+cola P99 (umbral) junto con la tasa/saldo DVP de `ofr_repo`.
+
 ## 2026-07-08 — Datos de repo bilateral cableados: OFR (DVP/GCF/tri-party)
 
 **Contexto.** Se incorpora la **capa 2 de repo** que faltaba: el U.S. Repo Markets Data

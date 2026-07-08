@@ -17,6 +17,7 @@ from .liquidity import LiquiditySeries
 from .signals import MarketSignal
 from .funding import FundingRate
 from .ofr_repo import OFRRepoSeries
+from .ofr_rates import OFRReferenceRate
 
 __all__ = [
     'Base', 'TimestampMixin', 'PipelineRun',
@@ -27,5 +28,5 @@ __all__ = [
     'ECBRate', 'ECBBalanceSheet', 'ECBMarketIndicator',
     'FedBalanceAsset', 'COTReport', 'CommodityPrice',
     'LiquiditySeries', 'MarketSignal', 'FundingRate',
-    'OFRRepoSeries',
+    'OFRRepoSeries', 'OFRReferenceRate',
 ]

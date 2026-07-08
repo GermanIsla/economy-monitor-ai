@@ -13,12 +13,9 @@ import pandas as pd
 from sqlalchemy import select
 from db.engine import get_session
 from db.models.ofr_repo import OFRRepoSeries
-from db.models.indices import MarketIndex
-from dashboard.components.charts import apply_standard_layout, empty_figure
-
-# Color del S&P 500 como línea de referencia (eje secundario). Neutro para no
-# chocar con los colores de venues/tenores y leerse como "fondo de mercado".
-SP500_COLOR = "rgba(220,220,220,0.55)"
+from dashboard.components.charts import (
+    apply_standard_layout, empty_figure, add_sp500_reference,
+)
 
 dash.register_page(
     __name__,
@@ -194,45 +191,6 @@ def _series(df, venue, metric, segment):
     return sub.sort_values("date")
 
 
-def _load_sp500(periodo_dias: int) -> pd.DataFrame:
-    """Carga el S&P 500 (^GSPC) para usarlo como referencia comparativa."""
-    with get_session() as session:
-        stmt = (
-            select(MarketIndex)
-            .where(MarketIndex.index_symbol == "^GSPC")
-            .order_by(MarketIndex.date)
-        )
-        results = session.execute(stmt).scalars().all()
-    if not results:
-        return pd.DataFrame()
-    df = pd.DataFrame([{"date": r.date, "close": r.close_price} for r in results])
-    df["date"] = pd.to_datetime(df["date"])
-    if periodo_dias and periodo_dias > 0:
-        limite = pd.Timestamp.now().normalize() - pd.Timedelta(days=periodo_dias)
-        df = df[df["date"] >= limite]
-    return df
-
-
-def _add_sp500(fig, sp: pd.DataFrame):
-    """
-    Superpone el S&P 500 en un eje Y secundario (derecha). Es una línea de
-    referencia: se activa/desactiva haciendo clic en su nombre en la leyenda.
-    """
-    if sp is None or sp.empty:
-        return fig
-    fig.add_trace(go.Scatter(
-        x=sp["date"], y=sp["close"], name="S&P 500 (dcho.)", mode="lines",
-        line={"color": SP500_COLOR, "width": 1.3},
-        yaxis="y2",
-        hovertemplate="<b>S&P 500</b><br>%{x|%Y-%m-%d}<br>%{y:,.0f}<extra></extra>",
-    ))
-    fig.update_layout(yaxis2={
-        "title": "S&P 500", "overlaying": "y", "side": "right",
-        "showgrid": False, "zeroline": False,
-    })
-    return fig
-
-
 def _fmt_vol(millions: float) -> str:
     """Millones USD → texto en billones (10¹²) o miles de millones (10⁹)."""
     if millions is None or millions != millions:
@@ -264,7 +222,6 @@ def update_ofr(periodo_dias):
         empty = empty_figure("Sin datos — ejecuta: python run_pipeline.py ofr_repo --full")
         return (empty, empty, empty, empty, "N/A", "", "N/A", "", "N/A", "")
 
-    sp = _load_sp500(periodo_dias)  # referencia S&P 500 (eje secundario)
 
     # --- Volumen negociado por venue (billones USD) ---
     fig_vol = go.Figure()
@@ -341,7 +298,7 @@ def update_ofr(periodo_dias):
 
     # --- S&P 500 de referencia en cada gráfico (toggle por leyenda) ---
     for f in (fig_vol, fig_rate, fig_tenor, fig_flow):
-        _add_sp500(f, sp)
+        add_sp500_reference(f, periodo_dias)
 
     # --- KPIs ---
     def kpi(venue):

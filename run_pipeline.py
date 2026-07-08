@@ -23,6 +23,7 @@ PIPELINES = {
     'signals': 'pipelines.signals_pipeline.SignalsPipeline',
     'funding': 'pipelines.funding_pipeline.FundingPipeline',
     'ofr_repo': 'pipelines.ofr_repo_pipeline.OFRRepoPipeline',
+    'ofr_rates': 'pipelines.ofr_rates_pipeline.OFRRatesPipeline',
 }
 
 

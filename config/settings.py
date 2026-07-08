@@ -72,5 +72,12 @@ SOURCES = {
         'rate_limit': 1.0,
         'schedule':   {'trigger': 'cron', 'hour': 22, 'minute': 30},
     },
+    'ofr_rates': {
+        # OFR — tasas de referencia NY Fed (dataset FNYR): SOFR/BGCR/TGCR con
+        # percentiles y volumen. Misma API que ofr_repo.
+        'base_url':   'https://data.financialresearch.gov/v1/series/timeseries/',
+        'rate_limit': 1.0,
+        'schedule':   {'trigger': 'cron', 'hour': 22, 'minute': 40},
+    },
     # Añadir nuevas fuentes aquí siguiendo el mismo patrón
 }

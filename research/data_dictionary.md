@@ -148,3 +148,24 @@ la API tiene ~160 mnemónicos (más buckets de colateral) ampliables si el estud
 - **Señal esperada:** la tasa DVP y sus **picos** (no el nivel medio) marcan escasez de
   garantía/reservas → variable **episódica/umbral**, como `funding_stress`. El *volumen vivo*
   DVP aproxima el apalancamiento acumulado (relevante para riesgo de desapalancamiento).
+
+---
+
+## Tasas repo y estrés — OFR / FNYR (tabla `ofr_reference_rates`) — ✅ implementada (2026-07-08)
+
+Pipeline `ofr_rates`, dataset **FNYR** de la OFR (misma API pública sin key). **Diario 2018-04–hoy.**
+Descompone el mnemónico en `rate` (familia) y `stat` (estadístico).
+
+**Tasas (`rate`):** `SOFR`, `BGCR` (Broad GC), `TGCR` (Tri-party GC) — repo garantizado; más
+`EFFR`, `OBFR` (no garantizado, solo nivel, para spreads tipo SOFR−EFFR).
+
+**Estadístico (`stat`) y unidad (normalizada):**
+- `LEVEL`, `P1`, `P25`, `P75`, `P99` → **porcentaje**. La tasa publicada es la mediana; los
+  percentiles describen la distribución intradía de operaciones.
+- `VOLUME` → **millones USD** (la API lo da en dólares brutos → ÷1e6).
+
+**La señal clave — cola P99:** `P99 − LEVEL` (en puntos básicos) aísla el estrés. Máximo
+histórico **17-sep-2019, SOFR P99 = 9,00%** (crisis repo). Es una variable **episódica/umbral**
+como `funding_stress`: la información está en los **picos**, no en el nivel medio → analizar por
+eventos/umbral, no por correlación lineal. Complementa a `ofr_repo_series` (volúmenes por venue)
+y a `funding_rates` (SOFR−EFFR). Pendiente de cablear al motor `analysis`.

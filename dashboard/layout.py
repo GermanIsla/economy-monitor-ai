@@ -60,6 +60,11 @@ def create_layout():
                         ], href="/ofr-repo", active="exact"),
 
                         dbc.NavLink([
+                            html.I(className="bi bi-thermometer-half me-2"),
+                            "Tasas repo y estrés"
+                        ], href="/ofr-rates", active="exact"),
+
+                        dbc.NavLink([
                             html.I(className="bi bi-arrow-left-right me-2"),
                             "Ecb"
                         ], href="/ecb", active="exact"),

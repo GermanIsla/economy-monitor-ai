@@ -11,10 +11,17 @@ No tocar hasta agotar el valor de lo que ya tenemos (filosofía del usuario: "de
   que temíamos, no ~2023+). API pública sin key. Ver diccionario + bitácora 2026-07-08.
 - **Repo patrocinado (sponsored)** — FICC/DTCC: canal fondos monetarios → hedge funds. El
   `Sponsored GC` que ya tenemos solo llega a dic-2024; OFR/FICC tiene más.
-- **NCCBR** (Non-Centrally Cleared Bilateral Repo — repo bilateral sin compensar): donde vive
-  el apalancamiento opaco de los hedge funds. Recolección OFR muy reciente.
-- **Volumen de SOFR y percentil 99** (NY Fed): los picos de tensión que el nivel medio esconde.
-- **Posiciones y financiación de primary dealers** (NY Fed, formulario FR2004).
+- ❌ **NCCBR** (Non-Centrally Cleared Bilateral Repo — repo bilateral sin compensar): donde vive
+  el apalancamiento opaco de los hedge funds. **NO descargable vía API pública de la OFR**
+  (recolección a nivel-transacción, confidencial; solo salen agregados en informes/gráficos).
+  Comprobado 2026-07-08. Alternativa parcial: el libro repo de primary dealers (NYPD, abajo).
+- ✅ **Volumen de SOFR y percentil 99** (NY Fed): **HECHO 2026-07-08.** Pipeline `ofr_rates`,
+  tabla `ofr_reference_rates`, página `/ofr-rates`. Dataset FNYR de la OFR: SOFR/BGCR/TGCR con
+  percentiles 1/25/75/99 y volumen, diario 2018–. Capta el pico de sep-2019 (SOFR P99 = 9,00%).
+- **Posiciones y financiación de primary dealers** (NY Fed, formulario FR2004) — **disponible en
+  la misma API OFR: dataset `NYPD` (194 series)**, incluye el libro *reverse repo* de los dealers
+  por colateral (AG/MBS/CORD/EQT/TIPS/T) y tenor. Es el "repo bilateral" más cercano a NCCBR.
+  **SIGUIENTE candidato a incorporar.**
 - **SOFR−IORB** (ya tenemos los datos: SOFR, IORB en `funding_rates`) → derivar como 2ª medida
   de escasez de reservas (probar frente a SOFR−EFFR).
 
