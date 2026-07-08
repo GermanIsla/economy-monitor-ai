@@ -150,9 +150,9 @@ layout = dbc.Container([
                     html.Small(id="rb-kpi-rrepo-d", className="text-muted"),
                 ])), md=4),
                 dbc.Col(dbc.Card(dbc.CardBody([
-                    html.H6("Pico repo (crisis 2019)", className="text-muted small mb-1"),
+                    html.H6("Pico repo histórico", className="text-muted small mb-1"),
                     html.H4(id="rb-kpi-peak", className="mb-0", style={"color": "#e45756"}),
-                    html.Small("11-sep-2019", className="text-muted"),
+                    html.Small("máx. 2015–2021 (COVID, mar-2020)", className="text-muted"),
                 ])), md=4),
             ], className="my-3"),
             html.H5("Repo vs. reverse repo (total, billones USD)", className="mb-2"),
@@ -362,30 +362,47 @@ def update_rates(periodo):
     Input("rb-periodo", "value"),
 )
 def update_dealers(periodo):
-    # Serie HISTÓRICA (2015–2021): se ignora el filtro de periodo (que la dejaría vacía
-    # para ventanas recientes) y se muestra siempre todo su histórico.
+    # Serie HISTÓRICA (2015–2021). Se carga completa y la ventana del selector de periodo
+    # se ancla al PROPIO histórico de la serie (no a hoy), para que "zoomee" sobre 2015–2021
+    # en vez de vaciar el gráfico.
     df = _load(OFRDealerFinancing, ["date", "flow", "collateral", "tenor", "value"], 0)
     if df.empty:
         e = empty_figure("Sin datos — ejecuta: python run_pipeline.py ofr_dealer --full")
         return e, e, e, "N/A", "", "N/A", "", "N/A"
 
+    data_start, data_end = df["date"].min(), df["date"].max()
+    if periodo and periodo > 0:
+        win_start = max(data_start, data_end - pd.Timedelta(days=periodo))
+    else:
+        win_start = data_start
+    dfw = df[df["date"] >= win_start]
+
+    leaves = [c for c, _, _ in DEALER_COLLAT]
+
     def ser(flow, collateral, tenor):
-        s = df[(df.flow == flow) & (df.collateral == collateral) & (df.tenor == tenor)]
+        s = dfw[(dfw.flow == flow) & (dfw.collateral == collateral) & (dfw.tenor == tenor)]
         return s.sort_values("date")
 
-    # Total repo vs reverse repo
+    def total_recon(flow, source):
+        # El total agregado de la OFR (TOT/TOT) tiene muchos huecos (queda None si falta
+        # cualquier componente → solo 55/31 puntos). Reconstruimos el total sumando los
+        # colaterales hoja por fecha → línea densa y continua (reverse repo llega a 2021).
+        sub = source[(source.flow == flow) & (source.tenor == "TOT")
+                     & (source.collateral.isin(leaves))]
+        return sub.groupby("date")["value"].sum().sort_index()
+
+    # Total repo vs reverse repo (reconstruido desde colaterales)
     fig_tot = go.Figure()
     for flow, name, color in [("REPO", "Repo (toma efectivo)", "#4c78a8"),
                               ("REVERSE_REPO", "Reverse repo (presta efectivo)", "#e4a23b")]:
-        s = ser(flow, "TOT", "TOT")
-        if not s.empty:
-            fig_tot.add_trace(go.Scatter(x=s["date"], y=s["value"] / 1e6, name=name, mode="lines",
+        t = total_recon(flow, dfw)
+        if not t.empty:
+            fig_tot.add_trace(go.Scatter(x=t.index, y=t.values / 1e6, name=name, mode="lines",
                 line={"color": color, "width": 1.6},
                 hovertemplate=f"{name}<br>%{{x|%Y-%m-%d}}<br>$%{{y:,.2f}} B<extra></extra>"))
     apply_standard_layout(fig_tot)
     fig_tot.update_layout(yaxis_title="Billones USD", hovermode="x unified",
                           legend={"orientation": "h", "y": -0.15})
-    add_sp500_reference(fig_tot, 0)  # S&P a todo el histórico, para solapar 2015–2021
 
     # Composición del repo por colateral (área apilada, hojas)
     fig_collat = go.Figure()
@@ -412,16 +429,20 @@ def update_dealers(periodo):
     fig_tenor.update_layout(yaxis_title="Billones USD", hovermode="x unified",
                             legend={"orientation": "h", "y": -0.15})
 
-    # KPIs
+    # S&P de referencia en los tres, alineado a la ventana de datos de dealers.
+    for f in (fig_tot, fig_collat, fig_tenor):
+        add_sp500_reference(f, start=win_start, end=data_end)
+
+    # KPIs (sobre el histórico completo y el total reconstruido, para estabilidad)
     def last_row(flow):
-        s = ser(flow, "TOT", "TOT")
-        if s.empty:
+        t = total_recon(flow, df)
+        if t.empty:
             return "N/A", ""
-        return f"${s['value'].iloc[-1] / 1e6:,.2f} B", f"{s['date'].iloc[-1]:%d-%m-%Y}"
+        return f"${t.iloc[-1] / 1e6:,.2f} B", f"{t.index[-1]:%d-%m-%Y}"
     repo_v, repo_d = last_row("REPO")
     rrepo_v, rrepo_d = last_row("REVERSE_REPO")
-    peak = df[(df.flow == "REPO") & (df.collateral == "TOT") & (df.tenor == "TOT")]
-    peak_t = f"${peak['value'].max() / 1e6:,.2f} B" if not peak.empty else "N/A"
+    peak_series = total_recon("REPO", df)
+    peak_t = f"${peak_series.max() / 1e6:,.2f} B" if not peak_series.empty else "N/A"
 
     return (fig_tot, fig_collat, fig_tenor,
             repo_v, repo_d, rrepo_v, rrepo_d, peak_t)

@@ -30,6 +30,8 @@ SP500_REF_COLOR = "rgba(220,220,220,0.55)"
 def add_sp500_reference(
     fig: go.Figure,
     periodo_dias: int = 0,
+    start=None,
+    end=None,
     name: str = "S&P 500 (dcho.)",
     color: str = SP500_REF_COLOR,
 ) -> go.Figure:
@@ -38,10 +40,15 @@ def add_sp500_reference(
     de bolsa, para comparar visualmente cualquier serie con el mercado.
 
     La línea se muestra/oculta haciendo clic en su nombre en la leyenda (comportamiento
-    estándar de Plotly). `periodo_dias=0` usa todo el histórico; >0 filtra a esa ventana.
+    estándar de Plotly).
 
-    Reutilizable desde cualquier página: `add_sp500_reference(fig, periodo_dias)`.
-    Los imports pesados van dentro para no acoplar este módulo de estilo a la capa de datos.
+    Ventana temporal (para que el S&P solape con los datos del gráfico):
+      - `start`/`end` (fechas): si se dan, se filtra a ese rango explícito. Útil para
+        series históricas cuyo eje X no llega hasta hoy (p. ej. dealers 2015–2021).
+      - si no, `periodo_dias` filtra a los últimos N días desde hoy (0 = todo el histórico).
+
+    Reutilizable desde cualquier página. Los imports pesados van dentro para no acoplar
+    este módulo de estilo a la capa de datos.
     """
     import pandas as pd
     from sqlalchemy import select
@@ -61,7 +68,12 @@ def add_sp500_reference(
 
     df = pd.DataFrame([{"date": r.date, "close": r.close_price} for r in rows])
     df["date"] = pd.to_datetime(df["date"])
-    if periodo_dias and periodo_dias > 0:
+    if start is not None or end is not None:
+        if start is not None:
+            df = df[df["date"] >= pd.Timestamp(start)]
+        if end is not None:
+            df = df[df["date"] <= pd.Timestamp(end)]
+    elif periodo_dias and periodo_dias > 0:
         limite = pd.Timestamp.now().normalize() - pd.Timedelta(days=periodo_dias)
         df = df[df["date"] >= limite]
     if df.empty:
