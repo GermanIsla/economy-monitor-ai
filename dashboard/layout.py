@@ -51,8 +51,13 @@ def create_layout():
 
                         dbc.NavLink([
                             html.I(className="bi bi-arrow-left-right me-2"),
-                            "Repo"
+                            "Repo (NY Fed)"
                         ], href="/repo", active="exact"),
+
+                        dbc.NavLink([
+                            html.I(className="bi bi-diagram-3 me-2"),
+                            "Repo USA (OFR)"
+                        ], href="/ofr-repo", active="exact"),
 
                         dbc.NavLink([
                             html.I(className="bi bi-arrow-left-right me-2"),
@@ -69,6 +74,11 @@ def create_layout():
                         ], href="/cot", active="exact"),
 
                         html.Hr(className="border-secondary"),
+
+                        dbc.NavLink([
+                            html.I(className="bi bi-search me-2"),
+                            "Estudio Liquidez"
+                        ], href="/estudio", active="exact"),
 
                         dbc.NavLink([
                             html.I(className="bi bi-gear me-2"),

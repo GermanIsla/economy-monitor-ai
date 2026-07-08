@@ -19,7 +19,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 # --- Dashboard ---
 DASH_HOST = "127.0.0.1"
-DASH_PORT = 8050
+DASH_PORT = 8060
 DASH_DEBUG = True
 
 # --- Rate limiting global (segundos entre peticiones) ---
@@ -64,6 +64,13 @@ SOURCES = {
     'alpha_vantage': {
         'base_url':   'https://www.alphavantage.co/query',
         'rate_limit': 15.0,  # 15s entre peticiones → 4/min, muy por debajo del límite
+    },
+    'ofr_repo': {
+        # OFR — U.S. Repo Markets Data Release (Short-Term Funding Monitor).
+        # API REST pública, JSON, sin API key. Release preliminar diario a las 15:00 ET.
+        'base_url':   'https://data.financialresearch.gov/v1/series/timeseries/',
+        'rate_limit': 1.0,
+        'schedule':   {'trigger': 'cron', 'hour': 22, 'minute': 30},
     },
     # Añadir nuevas fuentes aquí siguiendo el mismo patrón
 }

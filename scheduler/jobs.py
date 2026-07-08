@@ -6,10 +6,15 @@ from datetime import datetime, timedelta
 from pipelines.treasury_pipeline import TreasuryPipeline
 from pipelines.nfci_pipeline import NFCIPipeline
 from pipelines.repo_pipeline import RepoPipeline
+from pipelines.indices_pipeline import IndicesPipeline
 from pipelines.ecb_pipeline import ECBPipeline
 from pipelines.fed_balance_pipeline import FedBalancePipeline
 from pipelines.cot_pipeline import COTPipeline
 from pipelines.commodity_price_pipeline import CommodityPricePipeline
+from pipelines.liquidity_pipeline import LiquidityPipeline
+from pipelines.signals_pipeline import SignalsPipeline
+from pipelines.funding_pipeline import FundingPipeline
+from pipelines.ofr_repo_pipeline import OFRRepoPipeline
 from utils.logger import get_logger
 
 logger = get_logger("scheduler")
@@ -20,10 +25,15 @@ ALL_PIPELINES = [
     TreasuryPipeline,
     NFCIPipeline,
     RepoPipeline,
+    IndicesPipeline,
     ECBPipeline,
     FedBalancePipeline,
     COTPipeline,
     CommodityPricePipeline,
+    LiquidityPipeline,
+    SignalsPipeline,
+    FundingPipeline,
+    OFRRepoPipeline,
 ]
 
 
@@ -125,6 +135,17 @@ def register_jobs(scheduler):
         replace_existing=True
     )
 
+    # Índices globales (S&P 500, Bitcoin): cada 6h desde Yahoo Finance.
+    # Datos diarios; el intervalo corto capta el cierre en cuanto se publica.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='interval',
+        args=[IndicesPipeline],
+        hours=6,
+        id='indices_interval',
+        replace_existing=True
+    )
+
     # BCE: día 5 de cada mes a las 8:00 (datos MMSR son mensuales)
     scheduler.add_job(
         run_pipeline_safe,
@@ -162,6 +183,48 @@ def register_jobs(scheduler):
         args=[CommodityPricePipeline],
         day_of_week='mon', hour=8, minute=30,
         id='commodity_prices_weekly',
+        replace_existing=True
+    )
+
+    # Liquidez neta (WALCL, TGA, RRP): diaria a las 21:00.
+    # RRP es diaria; WALCL/TGA semanales (jueves H.4.1). Refresco diario capta ambas.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[LiquidityPipeline],
+        hour=21, minute=0,
+        id='liquidity_daily',
+        replace_existing=True
+    )
+
+    # Señales de mercado (HY OAS, curva, VIX): diaria a las 21:15.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[SignalsPipeline],
+        hour=21, minute=15,
+        id='signals_daily',
+        replace_existing=True
+    )
+
+    # Financiación (SOFR, EFFR, IORB): diaria a las 21:20.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[FundingPipeline],
+        hour=21, minute=20,
+        id='funding_daily',
+        replace_existing=True
+    )
+
+    # OFR — U.S. Repo Markets Data Release (DVP/GCF/tri-party): diaria a las 22:30.
+    # El release preliminar sale a las 15:00 ET; a las 22:30 Madrid ya está publicado.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[OFRRepoPipeline],
+        hour=22, minute=30,
+        id='ofr_repo_daily',
         replace_existing=True
     )
 

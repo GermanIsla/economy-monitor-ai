@@ -4,7 +4,7 @@ Sistema modular de recopilación, almacenamiento y visualización de datos econ�
 
 ## Stack
 
-- **Dashboard:** Dash + Plotly (localhost:8050)
+- **Dashboard:** Dash + Plotly (localhost:8060)
 - **Base de datos:** SQLite + SQLAlchemy + Alembic
 - **Scheduler:** APScheduler
 - **Scraping:** BeautifulSoup4 / Selenium
@@ -30,7 +30,7 @@ python run_pipeline.py treasury
 ### 2. Abrir el dashboard
 ```bash
 python run_dashboard.py
-# → Abrir http://127.0.0.1:8050 en el navegador
+# → Abrir http://127.0.0.1:8060 en el navegador
 ```
 
 ### 3. Activar descargas automáticas (opcional)

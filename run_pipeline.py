@@ -14,12 +14,15 @@ PIPELINES = {
     'treasury': 'pipelines.treasury_pipeline.TreasuryPipeline',
     'nfci': 'pipelines.nfci_pipeline.NFCIPipeline',
     'repo': 'pipelines.repo_pipeline.RepoPipeline',
-    # Descomenta cuando estén implementados:
-    # 'indices': 'pipelines.indices_pipeline.IndicesPipeline',
+    'indices': 'pipelines.indices_pipeline.IndicesPipeline',
     'ecb': 'pipelines.ecb_pipeline.ECBPipeline',
     'fed_balance': 'pipelines.fed_balance_pipeline.FedBalancePipeline',
     'cot': 'pipelines.cot_pipeline.COTPipeline',
     'commodity_prices': 'pipelines.commodity_price_pipeline.CommodityPricePipeline',
+    'liquidity': 'pipelines.liquidity_pipeline.LiquidityPipeline',
+    'signals': 'pipelines.signals_pipeline.SignalsPipeline',
+    'funding': 'pipelines.funding_pipeline.FundingPipeline',
+    'ofr_repo': 'pipelines.ofr_repo_pipeline.OFRRepoPipeline',
 }
 
 
