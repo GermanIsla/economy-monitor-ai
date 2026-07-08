@@ -5,6 +5,21 @@ resultado · conclusión/siguiente paso**. Se registran también los resultados 
 
 ---
 
+## 2026-07-08 — Repo patrocinado (sponsored) + cuotas por venue + S&P en equities NY Fed
+
+**Sponsored.** Cuarta y última fuente de repo bilateral: FICC Sponsored Service, desde el
+**OFR Hedge Fund Monitor** (API distinta: base `/hf/v1/`). Pipeline `ofr_sponsored`, tabla
+`ofr_sponsored_repo`. Series repo/reverse-repo, diario 2020–hoy (~$1,1 B / $1,4 B). Canal fondos
+monetarios → hedge funds vía FICC; se solapa con DVP. Añadido como 4ª pestaña de `/repo-bilateral`.
+
+**Con esto cierra el bloque de repo bilateral descargable:** venues + tasas/estrés + dealers +
+sponsored. Solo el NCCBR puro queda fuera (confidencial).
+
+**Mejoras de dashboard.** (1) En la pestaña de venues: línea **Total** (suma de venues) en el
+volumen, **cuotas %** de cada venue bajo el gráfico, y desplegable de términos + ranking de
+importancia (DVP > tri-party > GCF). (2) A petición del usuario, **S&P 500 de referencia en el
+gráfico de equities de la página Repo (NY Fed)** — el colateral de acciones se mueve con la bolsa.
+
 ## 2026-07-08 — Libro repo de primary dealers (NYPD) + consolidación de páginas de repo
 
 **Contexto.** Tercera fuente OFR del día: financiación repo de los **primary dealers**

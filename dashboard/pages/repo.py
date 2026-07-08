@@ -14,7 +14,7 @@ from db.engine import get_session
 from db.models.repo import RepoOperation
 from db.models.gcf_repo import GCFRepoTotal, RepoMarketSplit, GCFRepoAssetClass, GCFRepoCUSIP
 from dashboard.components.cards import kpi_card
-from dashboard.components.charts import empty_figure, CHART_LAYOUT
+from dashboard.components.charts import empty_figure, CHART_LAYOUT, add_sp500_reference
 
 dash.register_page(__name__, path="/repo", name="Repo", title="Economy Monitor | Repo")
 
@@ -541,6 +541,9 @@ def _view_equities(df):
     fig1 = go.Figure()
     fig1.add_trace(go.Scatter(x=eq['date'], y=eq['collateral_value'], mode='lines', name='Equities', line=dict(color='#06b6d4', width=2), fill='tozeroy', fillcolor='rgba(6, 182, 212, 0.15)'))
     fig1.update_layout(**_base_layout(title_text="Volumen de Repo con Colateral de Equities", yaxis_title="Volumen (miles de millones USD)"))
+    # S&P 500 de referencia (eje derecho), alineado a la ventana de datos de equities:
+    # muy explicativo, porque las acciones como colateral tienden a moverse con la bolsa.
+    add_sp500_reference(fig1, start=eq['date'].min(), end=eq['date'].max())
 
     eq2 = eq.copy()
     eq2['pct'] = eq2['collateral_value'].pct_change() * 100

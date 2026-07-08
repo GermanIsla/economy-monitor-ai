@@ -17,6 +17,7 @@ from pipelines.funding_pipeline import FundingPipeline
 from pipelines.ofr_repo_pipeline import OFRRepoPipeline
 from pipelines.ofr_rates_pipeline import OFRRatesPipeline
 from pipelines.ofr_dealer_pipeline import OFRDealerPipeline
+from pipelines.ofr_sponsored_pipeline import OFRSponsoredPipeline
 from utils.logger import get_logger
 
 logger = get_logger("scheduler")
@@ -38,6 +39,7 @@ ALL_PIPELINES = [
     OFRRepoPipeline,
     OFRRatesPipeline,
     OFRDealerPipeline,
+    OFRSponsoredPipeline,
 ]
 
 
@@ -249,6 +251,16 @@ def register_jobs(scheduler):
         args=[OFRDealerPipeline],
         day_of_week='thu', hour=22, minute=50,
         id='ofr_dealer_weekly',
+        replace_existing=True
+    )
+
+    # OFR Hedge Fund Monitor — repo patrocinado (FICC Sponsored): semanal, viernes 23:00.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[OFRSponsoredPipeline],
+        day_of_week='fri', hour=23, minute=0,
+        id='ofr_sponsored_weekly',
         replace_existing=True
     )
 

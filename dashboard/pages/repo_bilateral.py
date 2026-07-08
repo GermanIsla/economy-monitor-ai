@@ -17,6 +17,7 @@ from db.engine import get_session
 from db.models.ofr_repo import OFRRepoSeries
 from db.models.ofr_rates import OFRReferenceRate
 from db.models.ofr_dealer import OFRDealerFinancing
+from db.models.ofr_sponsored import OFRSponsoredRepo
 from dashboard.components.charts import (
     apply_standard_layout, empty_figure, add_sp500_reference,
 )
@@ -74,6 +75,15 @@ EXPLICACION_VENUES = """
 - **Overnight & Open**: a un día o sin vencimiento fijo (renovable a diario). El grueso del repo.
 - **≤ 30 días** y **> 30 días**: repo a plazo (*term*). Más plazo = financiación más estable.
 
+**¿Cuáles son los más importantes?** Por tamaño y relevancia para el estudio:
+1. **DVP** — el mayor y el más informativo: es el canal del **apalancamiento de los hedge funds**
+   (basis trade). Sus picos de tasa/volumen y su saldo vivo son la mejor señal de estrés/riesgo.
+2. **Tri-party** — grande y estable; refleja la financiación «mayorista» (fondos monetarios →
+   dealers). Menos volátil, más estructural.
+3. **GCF** — el más pequeño (interdealer); útil como termómetro de fricciones entre dealers.
+
+La cuota de cada uno (bajo el título del gráfico) te dice qué parte del total representa hoy.
+
 **La línea gris (S&P 500, eje derecho)** es solo una referencia de bolsa para comparar; se
 oculta/muestra con clic en la leyenda. Todos los importes están en **billones** (10¹²) de dólares.
 """
@@ -115,6 +125,7 @@ layout = dbc.Container([
                    "(interdealer) y tri-party. Volumen negociado y tasa por venue; detalle "
                    "de DVP por plazo.", className="text-muted small my-3"),
             html.H5("Volumen negociado por venue (billones USD)", className="mb-2"),
+            html.Div(id="rb-venues-shares", className="text-muted small mb-2"),
             _graph("rb-vol"),
             html.H5("Tasa media por venue (%)", className="mb-2"),
             _graph("rb-rate"),
@@ -197,6 +208,40 @@ layout = dbc.Container([
             html.H5("Repo por plazo (overnight vs. term)", className="mb-2"),
             _graph("rb-dealer-tenor"),
         ]),
+
+        # ---------- TAB 4: Repo patrocinado (sponsored) ----------
+        dbc.Tab(label="Repo patrocinado", tab_id="tab-sponsored", children=[
+            html.P("Repo del FICC Sponsored Service: un dealer «patrocina» a un hedge fund o "
+                   "fondo monetario para que compense en FICC. Es la vía por la que el efectivo "
+                   "de los fondos monetarios financia el apalancamiento de los hedge funds.",
+                   className="text-muted small my-3"),
+            dbc.Row([
+                dbc.Col(dbc.Card(dbc.CardBody([
+                    html.H6("Repo patrocinado", className="text-muted small mb-1"),
+                    html.H4(id="rb-kpi-spon-repo", className="mb-0", style={"color": "#4c78a8"}),
+                    html.Small(id="rb-kpi-spon-repo-d", className="text-muted"),
+                ])), md=4),
+                dbc.Col(dbc.Card(dbc.CardBody([
+                    html.H6("Reverse repo patrocinado", className="text-muted small mb-1"),
+                    html.H4(id="rb-kpi-spon-rrepo", className="mb-0", style={"color": "#e4a23b"}),
+                    html.Small(id="rb-kpi-spon-rrepo-d", className="text-muted"),
+                ])), md=4),
+                dbc.Col(dbc.Card(dbc.CardBody([
+                    html.H6("Pico repo patrocinado", className="text-muted small mb-1"),
+                    html.H4(id="rb-kpi-spon-peak", className="mb-0", style={"color": "#e45756"}),
+                    html.Small("máximo histórico", className="text-muted"),
+                ])), md=4),
+            ], className="my-3"),
+            html.H5("Volumen de repo patrocinado (billones USD)", className="mb-2"),
+            _graph("rb-spon"),
+            dbc.Alert([
+                html.B("¿Repo o reverse repo? "),
+                "Desde la óptica del miembro patrocinado: «repo» = el hedge fund toma efectivo "
+                "(apalancamiento); «reverse repo» = el fondo monetario coloca efectivo. Se solapa "
+                "en parte con el venue DVP (el sponsored es repo bilateral compensado), así que "
+                "no lo sumes al total de venues.",
+            ], color="secondary", className="small"),
+        ]),
     ], id="rb-tabs", active_tab="tab-venues"),
 
     html.Div(className="mb-5"),
@@ -238,13 +283,14 @@ def toggle_venues_help(n):
 @callback(
     Output("rb-vol", "figure"), Output("rb-rate", "figure"),
     Output("rb-dvp-tenor", "figure"), Output("rb-dvp-flow", "figure"),
+    Output("rb-venues-shares", "children"),
     Input("rb-periodo", "value"),
 )
 def update_venues(periodo):
     df = _load(OFRRepoSeries, ["date", "venue", "metric", "segment", "value"], periodo)
     if df.empty:
         e = empty_figure("Sin datos — ejecuta: python run_pipeline.py ofr_repo --full")
-        return e, e, e, e
+        return e, e, e, e, ""
 
     def ser(venue, metric, segment):
         s = df[(df.venue == venue) & (df.metric == metric) & (df.segment == segment)]
@@ -309,7 +355,28 @@ def update_venues(periodo):
 
     for f in (fig_vol, fig_rate, fig_tenor, fig_flow):
         add_sp500_reference(f, periodo)
-    return fig_vol, fig_rate, fig_tenor, fig_flow
+
+    # Cuota actual de cada venue sobre el total (último valor disponible de cada uno).
+    shares = ""
+    latest = (df[(df.metric == "TV") & (df.segment == "TOT") & (df.venue.isin(list(VENUES)))]
+              .sort_values("date").groupby("venue").tail(1))
+    if not latest.empty:
+        suma = latest["value"].sum()
+        if suma > 0:
+            partes = []
+            for v, cfg in VENUES.items():
+                row = latest[latest.venue == v]
+                if not row.empty:
+                    pct = row["value"].iloc[0] / suma * 100
+                    partes.append(f"{cfg['nombre'].split(' (')[0]} {pct:.0f}%")
+            fecha = latest["date"].max()
+            shares = html.Span([
+                html.B("Cuota del volumen negociado: "),
+                " · ".join(partes),
+                html.Span(f"  (a {fecha:%d-%m-%Y})", className="text-muted"),
+            ])
+
+    return fig_vol, fig_rate, fig_tenor, fig_flow, shares
 
 
 # ==================================================================
@@ -499,3 +566,51 @@ def update_dealers(periodo):
 
     return (fig_tot, fig_collat, fig_tenor,
             repo_v, repo_d, rrepo_v, rrepo_d, peak_t)
+
+
+# ==================================================================
+# TAB 4 — Repo patrocinado (sponsored)
+# ==================================================================
+@callback(
+    Output("rb-spon", "figure"),
+    Output("rb-kpi-spon-repo", "children"), Output("rb-kpi-spon-repo-d", "children"),
+    Output("rb-kpi-spon-rrepo", "children"), Output("rb-kpi-spon-rrepo-d", "children"),
+    Output("rb-kpi-spon-peak", "children"),
+    Input("rb-periodo", "value"),
+)
+def update_sponsored(periodo):
+    df = _load(OFRSponsoredRepo, ["date", "flow", "value"], periodo)
+    if df.empty:
+        e = empty_figure("Sin datos — ejecuta: python run_pipeline.py ofr_sponsored --full")
+        return e, "N/A", "", "N/A", "", "N/A"
+
+    def ser(flow):
+        return df[df.flow == flow].sort_values("date")
+
+    fig = go.Figure()
+    for flow, name, color in [("REPO", "Repo (hedge fund toma efectivo)", "#4c78a8"),
+                              ("REVERSE_REPO", "Reverse repo (fondo monetario presta)", "#e4a23b")]:
+        s = ser(flow)
+        if not s.empty:
+            fig.add_trace(go.Scatter(x=s["date"], y=s["value"] / 1e6, name=name, mode="lines",
+                line={"color": color, "width": 1.6},
+                hovertemplate=f"{name}<br>%{{x|%Y-%m-%d}}<br>$%{{y:,.2f}} B<extra></extra>"))
+    apply_standard_layout(fig)
+    fig.update_layout(yaxis_title="Billones USD", hovermode="x unified",
+                      legend={"orientation": "h", "y": -0.15})
+    add_sp500_reference(fig, periodo)
+
+    # KPIs sobre el histórico completo (último valor + pico)
+    full = _load(OFRSponsoredRepo, ["date", "flow", "value"], 0)
+
+    def kpi(flow):
+        s = full[full.flow == flow].sort_values("date")
+        if s.empty:
+            return "N/A", ""
+        return f"${s['value'].iloc[-1] / 1e6:,.2f} B", f"{s['date'].iloc[-1]:%d-%m-%Y}"
+    repo_v, repo_d = kpi("REPO")
+    rrepo_v, rrepo_d = kpi("REVERSE_REPO")
+    peak = full[full.flow == "REPO"]
+    peak_t = f"${peak['value'].max() / 1e6:,.2f} B" if not peak.empty else "N/A"
+
+    return fig, repo_v, repo_d, rrepo_v, rrepo_d, peak_t

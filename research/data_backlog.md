@@ -9,8 +9,11 @@ No tocar hasta agotar el valor de lo que ya tenemos (filosofía del usuario: "de
   **HECHO 2026-07-08.** Pipeline `ofr_repo`, tabla `ofr_repo_series`, página `/ofr-repo`.
   Tasas y volúmenes de **DVP**, **GCF** y **tri-party**, diario **2018–hoy** (más histórico del
   que temíamos, no ~2023+). API pública sin key. Ver diccionario + bitácora 2026-07-08.
-- **Repo patrocinado (sponsored)** — FICC/DTCC: canal fondos monetarios → hedge funds. El
-  `Sponsored GC` que ya tenemos solo llega a dic-2024; OFR/FICC tiene más.
+- ✅ **Repo patrocinado (sponsored)** — FICC: **HECHO 2026-07-08.** Pipeline `ofr_sponsored`,
+  tabla `ofr_sponsored_repo`, pestaña "Repo patrocinado" de `/repo-bilateral`. Fuente: OFR
+  **Hedge Fund Monitor** (API distinta: `https://data.financialresearch.gov/hf/v1/`), series
+  `FICC-SPONSORED_REPO_VOL` y `_REVREPO_VOL`, diario 2020–hoy. Canal fondos monetarios → hedge
+  funds vía FICC. Se solapa en parte con el venue DVP (no sumar).
 - ❌ **NCCBR** (Non-Centrally Cleared Bilateral Repo — repo bilateral sin compensar): donde vive
   el apalancamiento opaco de los hedge funds. **NO descargable vía API pública de la OFR**
   (recolección a nivel-transacción, confidencial; solo salen agregados en informes/gráficos).

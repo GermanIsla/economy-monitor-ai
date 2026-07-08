@@ -196,3 +196,22 @@ pico $2,31 B en marzo-2020 (COVID). Reverse repo se corta antes (~2020), repo ha
 **Nota de dashboard:** las tres fuentes OFR (venues `ofr_repo_series`, tasas
 `ofr_reference_rates`, dealers `ofr_dealer_financing`) se muestran juntas en **`/repo-bilateral`**
 con pestañas. El tri-party de la NY Fed (`repo_operations`, colateral/haircut) sigue aparte en `/repo`.
+
+---
+
+## Repo patrocinado (sponsored) — OFR Hedge Fund Monitor (tabla `ofr_sponsored_repo`) — ✅ (2026-07-08)
+
+Pipeline `ofr_sponsored`. Fuente: **OFR Hedge Fund Monitor** — ⚠️ **API distinta** del resto de
+OFR: base `https://data.financialresearch.gov/hf/v1/` (no `/v1/`). Dataset `ficc`, 2 series:
+`FICC-SPONSORED_REPO_VOL` y `FICC-SPONSORED_REVREPO_VOL`. Diario 2020–hoy. Unidad: dólares brutos
+→ **millones USD** (÷1e6). `flow` = REPO / REVERSE_REPO.
+
+**Qué es:** el FICC Sponsored Service — un dealer «patrocina» a un hedge fund o fondo monetario
+para compensar en FICC. Desde la óptica del miembro patrocinado: `REPO` = el hedge fund toma
+efectivo (apalancamiento); `REVERSE_REPO` = el fondo monetario coloca efectivo. Últimos ~$1,1 B
+(repo) / ~$1,4 B (reverse). ⚠️ Se **solapa** con el venue DVP (el sponsored es parte del repo
+bilateral compensado) → no sumarlo al total de venues.
+
+**Estado del bloque repo:** con esto queda cubierto todo lo descargable del repo bilateral USA —
+venues (`ofr_repo_series`), tasas/estrés (`ofr_reference_rates`), dealers (`ofr_dealer_financing`)
+y sponsored (`ofr_sponsored_repo`), todo en `/repo-bilateral`. NCCBR puro sigue sin ser descargable.

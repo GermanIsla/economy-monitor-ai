@@ -85,5 +85,11 @@ SOURCES = {
         'rate_limit': 1.0,
         'schedule':   {'trigger': 'cron', 'day_of_week': 'thu', 'hour': 22, 'minute': 50},
     },
+    'ofr_sponsored': {
+        # OFR Hedge Fund Monitor — repo patrocinado (FICC Sponsored Service). API `/hf/`.
+        'base_url':   'https://data.financialresearch.gov/hf/v1/series/timeseries/',
+        'rate_limit': 1.0,
+        'schedule':   {'trigger': 'cron', 'day_of_week': 'fri', 'hour': 23, 'minute': 0},
+    },
     # Añadir nuevas fuentes aquí siguiendo el mismo patrón
 }
