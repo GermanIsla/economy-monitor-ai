@@ -16,6 +16,7 @@ from pipelines.signals_pipeline import SignalsPipeline
 from pipelines.funding_pipeline import FundingPipeline
 from pipelines.ofr_repo_pipeline import OFRRepoPipeline
 from pipelines.ofr_rates_pipeline import OFRRatesPipeline
+from pipelines.ofr_dealer_pipeline import OFRDealerPipeline
 from utils.logger import get_logger
 
 logger = get_logger("scheduler")
@@ -36,6 +37,7 @@ ALL_PIPELINES = [
     FundingPipeline,
     OFRRepoPipeline,
     OFRRatesPipeline,
+    OFRDealerPipeline,
 ]
 
 
@@ -237,6 +239,16 @@ def register_jobs(scheduler):
         args=[OFRRatesPipeline],
         hour=22, minute=40,
         id='ofr_rates_daily',
+        replace_existing=True
+    )
+
+    # OFR — financiación repo de primary dealers (FR2004/NYPD): semanal, jueves 22:50.
+    scheduler.add_job(
+        run_pipeline_safe,
+        trigger='cron',
+        args=[OFRDealerPipeline],
+        day_of_week='thu', hour=22, minute=50,
+        id='ofr_dealer_weekly',
         replace_existing=True
     )
 

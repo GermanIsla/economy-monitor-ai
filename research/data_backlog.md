@@ -18,10 +18,14 @@ No tocar hasta agotar el valor de lo que ya tenemos (filosofía del usuario: "de
 - ✅ **Volumen de SOFR y percentil 99** (NY Fed): **HECHO 2026-07-08.** Pipeline `ofr_rates`,
   tabla `ofr_reference_rates`, página `/ofr-rates`. Dataset FNYR de la OFR: SOFR/BGCR/TGCR con
   percentiles 1/25/75/99 y volumen, diario 2018–. Capta el pico de sep-2019 (SOFR P99 = 9,00%).
-- **Posiciones y financiación de primary dealers** (NY Fed, formulario FR2004) — **disponible en
-  la misma API OFR: dataset `NYPD` (194 series)**, incluye el libro *reverse repo* de los dealers
-  por colateral (AG/MBS/CORD/EQT/TIPS/T) y tenor. Es el "repo bilateral" más cercano a NCCBR.
-  **SIGUIENTE candidato a incorporar.**
+- ✅ **Financiación repo de primary dealers** (NY Fed, FR2004 / dataset `NYPD`): **HECHO
+  2026-07-08.** Pipeline `ofr_dealer`, tabla `ofr_dealer_financing`, apartado "Primary dealers"
+  de `/repo-bilateral`. RP=repo / RRP=reverse repo por colateral y tenor. Es el "repo bilateral"
+  más cercano al NCCBR (~60% del reverse repo de dealers es bilateral sin compensar). **Ojo:
+  discontinuado en 2021** (tras la revisión FR2004-2022 la financiación pasó al formato por venue
+  ya cubierto en `ofr_repo_series`). Captura la crisis repo 2019 (pico $2,64 B).
+  ⚠️ Lección: en NYPD, `AFtD`/`AFtR` **NO** son financiación sino **fails** (fallos de
+  entrega/recepción); la financiación real es `RP`/`RRP`.
 - **SOFR−IORB** (ya tenemos los datos: SOFR, IORB en `funding_rates`) → derivar como 2ª medida
   de escasez de reservas (probar frente a SOFR−EFFR).
 

@@ -5,6 +5,26 @@ resultado · conclusión/siguiente paso**. Se registran también los resultados 
 
 ---
 
+## 2026-07-08 — Libro repo de primary dealers (NYPD) + consolidación de páginas de repo
+
+**Contexto.** Tercera fuente OFR del día: financiación repo de los **primary dealers**
+(FR2004 / dataset NYPD). Pipeline `ofr_dealer`, tabla `ofr_dealer_financing`.
+
+**Qué es.** El libro repo real de los dealers: `RP` (repo, securities out) y `RRP` (reverse
+repo, securities in) por colateral y tenor, semanal. Es el "repo bilateral" más cercano al
+**NCCBR** (no descargable): ~60% del reverse repo de dealers es bilateral sin compensar.
+Captura la crisis repo de sep-2019 (repo total pico **$2,64 billones**).
+
+**Trampa resuelta.** En NYPD, `AFtD`/`AFtR` (que probé primero) resultaron ser **fails**
+(fallos de entrega, máx ~$500B), NO financiación. La financiación real es `RP`/`RRP` (~$2,6 B).
+Se rehízo el modelo. Además `RP`/`RRP` **se discontinúan en 2021**: tras la revisión FR2004-2022
+la financiación de dealers pasó al formato por venue, ya cubierto en `ofr_repo_series`. Es el
+patrón "datos recientes vs antiguos" que anticipaba el usuario.
+
+**Consolidación de dashboard.** Las tres fuentes OFR se unifican en una sola página
+**`/repo-bilateral`** con pestañas (Volúmenes por venue · Tasas y estrés · Primary dealers),
+eliminando `/ofr-repo` y `/ofr-rates`. El tri-party NY Fed (colateral/haircut) sigue en `/repo`.
+
 ## 2026-07-08 — Tasas repo con percentiles y volumen: OFR/FNYR (estrés de financiación)
 
 **Contexto.** Segunda incorporación del día desde la API OFR: dataset **FNYR** (tasas de

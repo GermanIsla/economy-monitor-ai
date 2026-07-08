@@ -56,13 +56,8 @@ def create_layout():
 
                         dbc.NavLink([
                             html.I(className="bi bi-diagram-3 me-2"),
-                            "Repo USA (OFR)"
-                        ], href="/ofr-repo", active="exact"),
-
-                        dbc.NavLink([
-                            html.I(className="bi bi-thermometer-half me-2"),
-                            "Tasas repo y estrés"
-                        ], href="/ofr-rates", active="exact"),
+                            "Repo bilateral (OFR)"
+                        ], href="/repo-bilateral", active="exact"),
 
                         dbc.NavLink([
                             html.I(className="bi bi-arrow-left-right me-2"),

@@ -169,3 +169,30 @@ histórico **17-sep-2019, SOFR P99 = 9,00%** (crisis repo). Es una variable **ep
 como `funding_stress`: la información está en los **picos**, no en el nivel medio → analizar por
 eventos/umbral, no por correlación lineal. Complementa a `ofr_repo_series` (volúmenes por venue)
 y a `funding_rates` (SOFR−EFFR). Pendiente de cablear al motor `analysis`.
+
+---
+
+## Financiación repo de primary dealers — OFR/NYPD (tabla `ofr_dealer_financing`) — ✅ (2026-07-08)
+
+Pipeline `ofr_dealer`, dataset **NYPD** (NY Fed Primary Dealer Statistics, formulario FR2004).
+**Semanal, 2015–2021** (DISCONTINUADO). El libro repo real de los primary dealers y el "repo
+bilateral" más cercano al NCCBR (~60% de su reverse repo es bilateral sin compensar, según la Fed).
+
+**Descomposición:** `flow` (REPO = RP, securities out; REVERSE_REPO = RRP, securities in),
+`collateral` (TOT, T, T_eTIPS, TIPS, AG, AG_MBS, AG_eMBS, CORD, EQT, ABS, OS), `tenor`
+(TOT, OO, L30, GE30). Unidad: **millones USD** (÷1e6 desde dólares brutos).
+
+**Magnitudes/eventos:** repo total pico **$2,64 B el 11-sep-2019** (crisis repo); reverse repo
+pico $2,31 B en marzo-2020 (COVID). Reverse repo se corta antes (~2020), repo hasta dic-2021.
+
+⚠️ **Trampas:**
+- **Discontinuado en 2021.** Tras la revisión del FR2004 (2022), la financiación repo de dealers
+  pasó al formato **por venue**, que ya está en `ofr_repo_series` (DVP/GCF/tri-party). Para el
+  dato ACTUAL usar esa tabla; ésta es histórica.
+- **`AFtD`/`AFtR` NO son financiación:** son **fails** (fallos de entrega/recepción). La
+  financiación real es `RP`/`RRP`. (Error detectado y corregido el 2026-07-08.)
+- **None frecuentes** en la fuente (confidencialidad/sin actividad) → el pipeline los descarta.
+
+**Nota de dashboard:** las tres fuentes OFR (venues `ofr_repo_series`, tasas
+`ofr_reference_rates`, dealers `ofr_dealer_financing`) se muestran juntas en **`/repo-bilateral`**
+con pestañas. El tri-party de la NY Fed (`repo_operations`, colateral/haircut) sigue aparte en `/repo`.

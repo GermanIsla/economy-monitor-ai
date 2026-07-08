@@ -79,5 +79,11 @@ SOURCES = {
         'rate_limit': 1.0,
         'schedule':   {'trigger': 'cron', 'hour': 22, 'minute': 40},
     },
+    'ofr_dealer': {
+        # OFR — financiación repo de primary dealers (FR2004 / dataset NYPD). Semanal.
+        'base_url':   'https://data.financialresearch.gov/v1/series/timeseries/',
+        'rate_limit': 1.0,
+        'schedule':   {'trigger': 'cron', 'day_of_week': 'thu', 'hour': 22, 'minute': 50},
+    },
     # Añadir nuevas fuentes aquí siguiendo el mismo patrón
 }

@@ -24,6 +24,7 @@ PIPELINES = {
     'funding': 'pipelines.funding_pipeline.FundingPipeline',
     'ofr_repo': 'pipelines.ofr_repo_pipeline.OFRRepoPipeline',
     'ofr_rates': 'pipelines.ofr_rates_pipeline.OFRRatesPipeline',
+    'ofr_dealer': 'pipelines.ofr_dealer_pipeline.OFRDealerPipeline',
 }
 
 
