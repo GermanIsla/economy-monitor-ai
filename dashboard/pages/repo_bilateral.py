@@ -362,7 +362,9 @@ def update_rates(periodo):
     Input("rb-periodo", "value"),
 )
 def update_dealers(periodo):
-    df = _load(OFRDealerFinancing, ["date", "flow", "collateral", "tenor", "value"], periodo)
+    # Serie HISTÓRICA (2015–2021): se ignora el filtro de periodo (que la dejaría vacía
+    # para ventanas recientes) y se muestra siempre todo su histórico.
+    df = _load(OFRDealerFinancing, ["date", "flow", "collateral", "tenor", "value"], 0)
     if df.empty:
         e = empty_figure("Sin datos — ejecuta: python run_pipeline.py ofr_dealer --full")
         return e, e, e, "N/A", "", "N/A", "", "N/A"
@@ -383,7 +385,7 @@ def update_dealers(periodo):
     apply_standard_layout(fig_tot)
     fig_tot.update_layout(yaxis_title="Billones USD", hovermode="x unified",
                           legend={"orientation": "h", "y": -0.15})
-    add_sp500_reference(fig_tot, periodo)
+    add_sp500_reference(fig_tot, 0)  # S&P a todo el histórico, para solapar 2015–2021
 
     # Composición del repo por colateral (área apilada, hojas)
     fig_collat = go.Figure()
