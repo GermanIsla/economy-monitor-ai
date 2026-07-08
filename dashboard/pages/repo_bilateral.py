@@ -50,6 +50,34 @@ DEALER_COLLAT = [
     ("OS",      "Otros valores",       "#9c755f"),
 ]
 
+EXPLICACION_VENUES = """
+**¿Qué es cada cosa en esta pestaña?**
+
+**Venues (canales por los que se hace el repo garantizado de EE. UU.):**
+- 🔵 **DVP** *(Delivery-versus-Payment)*: repo **bilateral compensado** vía FICC. El
+  prestatario elige el título concreto que da en garantía → es el canal por el que los
+  **hedge funds** montan apalancamiento (el *basis trade* del Tesoro). Es el de mayor volumen.
+- 🟢 **GCF** *(General Collateral Finance)*: mercado **interdealer** (dealer con dealer) de
+  colateral general; no se conoce ni la contraparte ni el título concreto.
+- 🟠 **Tri-party**: se negocia contra **clases** de colateral (no títulos concretos), con un
+  custodio (BNY) en medio. Es el canal por el que los fondos monetarios prestan efectivo a los dealers.
+- 🟣 **Total**: la suma de los tres → el tamaño del mercado de repo garantizado.
+
+**Métricas:**
+- **Volumen negociado** (*transaction volume*): dólares de repo **nuevo** iniciado ese día
+  (flujo). Mide cuánta financiación se mueve.
+- **Tasa media ponderada** (*average rate*, %): el coste medio del repo ese día.
+- **Saldo vivo** (*outstanding volume*): el importe total **pendiente** en cada momento (stock),
+  no solo lo nuevo del día. Aproxima el apalancamiento acumulado. (Solo DVP y GCF lo publican.)
+
+**Plazos (tenor)** — en el detalle de DVP:
+- **Overnight & Open**: a un día o sin vencimiento fijo (renovable a diario). El grueso del repo.
+- **≤ 30 días** y **> 30 días**: repo a plazo (*term*). Más plazo = financiación más estable.
+
+**La línea gris (S&P 500, eje derecho)** es solo una referencia de bolsa para comparar; se
+oculta/muestra con clic en la leyenda. Todos los importes están en **billones** (10¹²) de dólares.
+"""
+
 _PERIODO_OPTS = [
     {"label": "1 año", "value": 365},
     {"label": "3 años", "value": 1095},
@@ -94,6 +122,13 @@ layout = dbc.Container([
             _graph("rb-dvp-tenor"),
             html.H5("DVP — volumen negociado vs. saldo vivo", className="mb-2"),
             _graph("rb-dvp-flow"),
+            dbc.Button("📖 ¿Qué significa cada término?", id="rb-venues-help-btn",
+                       color="secondary", outline=True, size="sm", className="my-2"),
+            dbc.Collapse(
+                dbc.Card(dbc.CardBody(dcc.Markdown(EXPLICACION_VENUES)),
+                         className="border-secondary"),
+                id="rb-venues-help", is_open=False,
+            ),
         ]),
 
         # ---------- TAB 2: Tasas y estrés ----------
@@ -192,6 +227,15 @@ def _load(model, cols, periodo_dias):
 # TAB 1 — Venues
 # ==================================================================
 @callback(
+    Output("rb-venues-help", "is_open"),
+    Input("rb-venues-help-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def toggle_venues_help(n):
+    return (n or 0) % 2 == 1
+
+
+@callback(
     Output("rb-vol", "figure"), Output("rb-rate", "figure"),
     Output("rb-dvp-tenor", "figure"), Output("rb-dvp-flow", "figure"),
     Input("rb-periodo", "value"),
@@ -213,6 +257,15 @@ def update_venues(periodo):
             fig_vol.add_trace(go.Scatter(x=s["date"], y=s["value"] / 1e6, name=cfg["nombre"],
                 mode="lines", line={"color": cfg["color"], "width": 1.6},
                 hovertemplate=f"{cfg['nombre']}<br>%{{x|%Y-%m-%d}}<br>$%{{y:,.2f}} B<extra></extra>"))
+    # Línea TOTAL = suma de los tres venues por fecha (repo garantizado total).
+    tv_all = df[(df.metric == "TV") & (df.segment == "TOT")
+                & (df.venue.isin(list(VENUES)))]
+    total = tv_all.groupby("date")["value"].sum().sort_index()
+    if not total.empty:
+        fig_vol.add_trace(go.Scatter(x=total.index, y=total.values / 1e6,
+            name="Total (todos los venues)", mode="lines",
+            line={"color": "#8c6bb1", "width": 2.4},
+            hovertemplate="Total<br>%{x|%Y-%m-%d}<br>$%{y:,.2f} B<extra></extra>"))
     apply_standard_layout(fig_vol)
     fig_vol.update_layout(yaxis_title="Billones USD", hovermode="x unified",
                           legend={"orientation": "h", "y": -0.15})
